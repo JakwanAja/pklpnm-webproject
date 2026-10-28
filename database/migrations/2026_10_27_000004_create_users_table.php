@@ -2,23 +2,29 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+    // Menggantikan migration users bawaan Laravel (0001_01_01_000000_create_users_table.php).
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('sso_id', 100)->nullable()->unique(); // diisi nanti saat SSO kampus tersedia
+            $table->string('nama', 150);
+            $table->string('email', 150)->unique();
+            $table->string('password')->nullable();
+            $table->boolean('wajib_ganti_password')->default(false);
+            // mahasiswa, pic_magang, kps, dosen, pic_perusahaan, admin
+            $table->string('peran', 30)->default('mahasiswa')->index();
+            $table->foreignId('perusahaan_id')->nullable()->unique()
+                ->constrained('perusahaan')->restrictOnDelete(); // khusus PIC Perusahaan
+            $table->boolean('aktif')->default(true);
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
@@ -37,13 +43,10 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
     }
 };

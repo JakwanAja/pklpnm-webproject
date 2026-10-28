@@ -19,6 +19,7 @@
 /storage/*.key
 /storage/pail
 /vendor
+/materialpro-bt5-v10
 Homestead.json
 Homestead.yaml
 Thumbs.db
