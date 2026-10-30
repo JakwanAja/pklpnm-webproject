@@ -1,5 +1,6 @@
-{{-- Sidebar navigasi berdasarkan peran pengguna yang sedang login --}}
-<aside class="side-mini-panel with-vertical">
+﻿{{-- Sidebar navigasi berdasarkan peran pengguna yang sedang login --}}
+<aside class="left-sidebar with-vertical">
+    <div>
     <nav class="sidebar-nav scroll-sidebar" data-simplebar>
 
         {{-- Profil pengguna --}}
@@ -256,4 +257,5 @@
 
         </ul>
     </nav>
+    </div>
 </aside>
