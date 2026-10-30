@@ -62,6 +62,14 @@ class UserSeeder extends Seeder
                 'aktif'                 => true,
                 'wajib_ganti_password'  => false,
             ],
+            [
+                'nama'                  => 'PIC Perusahaan Test',
+                'email'                 => 'picperusahaan@pklpnm.test',
+                'password'              => Hash::make('password'),
+                'peran'                 => 'pic_perusahaan',
+                'aktif'                 => true,
+                'wajib_ganti_password'  => true, // wajib ganti saat login pertama
+            ],
         ];
 
         foreach ($users as $user) {

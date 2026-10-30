@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\GantiPasswordController;
 use App\Http\Controllers\Dosen\DashboardController as DosenDashboard;
 use App\Http\Controllers\Kps\DashboardController as KpsDashboard;
 use App\Http\Controllers\Mahasiswa\DashboardController as MahasiswaDashboard;
@@ -51,8 +52,13 @@ Route::get('/notifikasi/tandai-semua', function () {
 // =========================================================
 Route::middleware('auth')->group(function () {
 
+    // Ganti password (wajib untuk PIC Perusahaan baru)
+    // Tidak menggunakan middleware wajib-ganti-password agar tidak loop redirect
+    Route::get('/ganti-password', [GantiPasswordController::class, 'show'])->name('ganti-password');
+    Route::post('/ganti-password', [GantiPasswordController::class, 'update']);
+
     // Mahasiswa
-    Route::prefix('mahasiswa')->name('mahasiswa.')->middleware('peran:mahasiswa')->group(function () {
+    Route::prefix('mahasiswa')->name('mahasiswa.')->middleware(['peran:mahasiswa', 'wajib-ganti-password'])->group(function () {
         Route::get('/dashboard', [MahasiswaDashboard::class, 'index'])->name('dashboard');
         Route::get('/profil/edit', fn () => abort(503, 'Phase 3'))->name('profil.edit');
         Route::get('/pengajuan', fn () => abort(503, 'Phase 6'))->name('pengajuan.index');
@@ -62,7 +68,7 @@ Route::middleware('auth')->group(function () {
     });
 
     // PIC Magang
-    Route::prefix('pic-magang')->name('pic-magang.')->middleware('peran:pic_magang')->group(function () {
+    Route::prefix('pic-magang')->name('pic-magang.')->middleware(['peran:pic_magang', 'wajib-ganti-password'])->group(function () {
         Route::get('/dashboard', [PicMagangDashboard::class, 'index'])->name('dashboard');
         Route::get('/pengajuan', fn () => abort(503, 'Phase 8'))->name('pengajuan.index');
         Route::get('/perusahaan', fn () => abort(503, 'Phase 5'))->name('perusahaan.index');
@@ -71,28 +77,28 @@ Route::middleware('auth')->group(function () {
     });
 
     // KPS
-    Route::prefix('kps')->name('kps.')->middleware('peran:kps')->group(function () {
+    Route::prefix('kps')->name('kps.')->middleware(['peran:kps', 'wajib-ganti-password'])->group(function () {
         Route::get('/dashboard', [KpsDashboard::class, 'index'])->name('dashboard');
         Route::get('/pengajuan', fn () => abort(503, 'Phase 9'))->name('pengajuan.index');
         Route::get('/laporan', fn () => abort(503, 'Phase 15'))->name('laporan.index');
     });
 
     // Dosen Pembimbing
-    Route::prefix('dosen')->name('dosen.')->middleware('peran:dosen')->group(function () {
+    Route::prefix('dosen')->name('dosen.')->middleware(['peran:dosen', 'wajib-ganti-password'])->group(function () {
         Route::get('/dashboard', [DosenDashboard::class, 'index'])->name('dashboard');
         Route::get('/mahasiswa', fn () => abort(503, 'Phase 10'))->name('mahasiswa.index');
         Route::get('/bimbingan', fn () => abort(503, 'Phase 13'))->name('bimbingan.index');
     });
 
     // PIC Perusahaan
-    Route::prefix('pic-perusahaan')->name('pic-perusahaan.')->middleware('peran:pic_perusahaan')->group(function () {
+    Route::prefix('pic-perusahaan')->name('pic-perusahaan.')->middleware(['peran:pic_perusahaan', 'wajib-ganti-password'])->group(function () {
         Route::get('/dashboard', [PicPerusahaanDashboard::class, 'index'])->name('dashboard');
         Route::get('/jurnal', fn () => abort(503, 'Phase 12'))->name('jurnal.index');
         Route::get('/laporan', fn () => abort(503, 'Phase 15'))->name('laporan.index');
     });
 
     // Admin
-    Route::prefix('admin')->name('admin.')->middleware('peran:admin')->group(function () {
+    Route::prefix('admin')->name('admin.')->middleware(['peran:admin', 'wajib-ganti-password'])->group(function () {
         Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
         Route::get('/pengguna', fn () => abort(503, 'Phase 4'))->name('pengguna.index');
         Route::get('/perusahaan', fn () => abort(503, 'Phase 5'))->name('perusahaan.index');

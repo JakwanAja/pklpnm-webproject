@@ -13,7 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Alias middleware peran untuk RBAC per peran pengguna
         $middleware->alias([
-            'peran' => \App\Http\Middleware\CheckPeran::class,
+            'peran'               => \App\Http\Middleware\CheckPeran::class,
+            'wajib-ganti-password' => \App\Http\Middleware\WajibGantiPassword::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

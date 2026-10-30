@@ -51,8 +51,7 @@ inclusion: always
 - **Dashboard stub** — 6 dashboard per peran (mahasiswa, pic_magang, kps, dosen, pic_perusahaan, admin).
 - **Halaman error** — `errors/403.blade.php` untuk akses ditolak.
 
-### Yang Belum Ada (dikerjakan mulai Phase 2)
-- Middleware `WajibGantiPassword` (Phase 2)
+### Yang Belum Ada (dikerjakan mulai Phase 3)
 - Models selain `User` (`Perusahaan`, `Periode`, `Pengajuan`, dst.)
 - Services dan Repositories
 - Halaman fungsional (pengajuan, jurnal, bimbingan, laporan, penilaian, dll.)
@@ -313,15 +312,17 @@ Template MaterialPro adalah pre-built HTML + compiled assets. Strategi integrasi
 ---
 
 ### Phase 2 — Ganti Password PIC Perusahaan
+> **Phase 2 selesai** — 2026-10-30
+
 **Fitur yang diuji:** PIC Perusahaan wajib ganti password saat login pertama sebelum mengakses sistem.
 
 **Prasyarat:** Phase 1 selesai.
 
 **Lingkup:**
-- [ ] Middleware `WajibGantiPassword`: redirect jika `wajib_ganti_password = true`
-- [ ] `Auth/GantiPasswordController`: tampilkan form, proses ganti, set flag ke false
-- [ ] Halaman ganti password (`auth/ganti-password.blade.php`)
-- [ ] Form Request: `GantiPasswordRequest`
+- [x] Middleware `WajibGantiPassword`: redirect jika `wajib_ganti_password = true`
+- [x] `Auth/GantiPasswordController`: tampilkan form, proses ganti, set flag ke false
+- [x] Halaman ganti password (`auth/ganti-password.blade.php`)
+- [x] Form Request: `GantiPasswordRequest`
 
 **Kriteria Selesai:**
 - PIC Perusahaan dengan `wajib_ganti_password = true` diarahkan ke form ganti password setelah login
@@ -837,5 +838,6 @@ Belum ada package tambahan lain. Jangan tambahkan package baru tanpa konfirmasi 
 | 2026-10-28 | Phase 0 selesai | Semua infrastruktur siap; lanjut Phase 1 |
 | 2026-10-30 | Phase 1-4 dipecah menjadi Phase 1-17 | Prinsip 1 phase = 1 fitur yang dapat diuji secara mandiri |
 | 2026-10-30 | Phase 1 selesai | Login/logout & RBAC berfungsi untuk semua peran; middleware `CheckPeran`, `AuthController`, `LoginRequest`, 6 dashboard stub, halaman 403 sudah dibuat |
+| 2026-10-30 | Phase 2 selesai | Ganti password wajib PIC Perusahaan berfungsi; `WajibGantiPassword` middleware, `GantiPasswordController`, `GantiPasswordRequest`, view `auth/ganti-password.blade.php`, akun `picperusahaan@pklpnm.test` ditambahkan di seeder |
 
 *Tambahkan entri baru di tabel ini setiap kali ada keputusan teknis penting selama development.*
