@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="id"
       dir="ltr"
       data-bs-theme="light"
@@ -116,8 +116,11 @@
 
     {{-- Bootstrap Bundle --}}
     <script src="{{ asset('assets/libs/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
-    {{-- Tema MaterialPro --}}
+    {{-- Simplebar --}}
+    <script src="{{ asset('assets/libs/simplebar/dist/simplebar.min.js') }}"></script>
+    {{-- Tema MaterialPro (urutan penting: init -> feather -> theme -> app) --}}
     <script src="{{ asset('assets/js/theme/app.init.js') }}"></script>
+    <script src="{{ asset('assets/js/theme/feather.min.js') }}"></script>
     <script src="{{ asset('assets/js/theme/theme.js') }}"></script>
     <script src="{{ asset('assets/js/theme/app.min.js') }}"></script>
     {{-- Iconify --}}

@@ -1,4 +1,4 @@
----
+﻿---
 inclusion: always
 ---
 
@@ -22,7 +22,7 @@ inclusion: always
 | **Autentikasi** | Bawaan Laravel — tanpa Breeze, Jetstream, atau paket autentikasi lain |
 | **PDF** | `barryvdh/laravel-dompdf` |
 | **Excel** | `maatwebsite/excel` (Laravel Excel) |
-| **Arsitektur** | Controller → Service → Repository |
+| **Arsitektur** | Controller -> Service -> Repository |
 | **Otorisasi** | Laravel Policy/Gate (RBAC per peran) |
 | **Notifikasi** | Laravel Notification System (database + email) |
 | **Storage** | Private storage, akses via signed URL |
@@ -33,6 +33,7 @@ inclusion: always
 ## 2. Kondisi Project Saat Ini
 
 > **Phase 0 selesai** — 2026-10-28
+> **Phase 1 selesai** — 2026-10-30
 
 ### Yang Sudah Ada
 - **Database migrations** — 18 tabel sudah termigrasi di PostgreSQL (`pklpnm`).
@@ -44,15 +45,18 @@ inclusion: always
 - **Partial views** — `_sidebar.blade.php` (menu per peran), `_navbar.blade.php`, `_scripts.blade.php`.
 - **Helper** — `App\Helpers\PeranHelper` untuk label peran bahasa Indonesia.
 - **Seeders** — `PengaturanSeeder` (8 baris default) + `UserSeeder` (5 akun + 1 profil mahasiswa).
-- **Routes** — Semua nama route didefinisikan sebagai placeholder; siap diganti controller di Phase 1.
+- **Routes** — Semua route sudah diimplementasikan dengan controller nyata (Phase 1); placeholder 503 untuk fitur Phase 2+.
 - **Welcome page** — `welcome.blade.php` dengan status infrastruktur (tampil di mode debug).
+- **Autentikasi** — `Auth\AuthController` (login/logout), `LoginRequest`, `CheckPeran` middleware.
+- **Dashboard stub** — 6 dashboard per peran (mahasiswa, pic_magang, kps, dosen, pic_perusahaan, admin).
+- **Halaman error** — `errors/403.blade.php` untuk akses ditolak.
 
-### Yang Belum Ada (dikerjakan mulai Phase 1)
-- Controllers, Services, Repositories
+### Yang Belum Ada (dikerjakan mulai Phase 2)
+- Middleware `WajibGantiPassword` (Phase 2)
 - Models selain `User` (`Perusahaan`, `Periode`, `Pengajuan`, dst.)
-- Halaman login, autentikasi, middleware peran
+- Services dan Repositories
+- Halaman fungsional (pengajuan, jurnal, bimbingan, laporan, penilaian, dll.)
 - Policies
-- Semua halaman fungsional
 
 ---
 
@@ -76,25 +80,25 @@ inclusion: always
 ### Tabel dan Relasi Utama
 
 ```
-perusahaan ──< pengajuan >── periode
-                    │
-                    └──< anggota_pengajuan >── users (mahasiswa)
-                                │                     │
-                                │               users (dosen_pembimbing)
-                                │
-                    ┌───────────┼───────────────┐
-                    │           │               │
+perusahaan --< pengajuan >-- periode
+                    |
+                    +--< anggota_pengajuan >-- users (mahasiswa)
+                                |                     |
+                                |               users (dosen_pembimbing)
+                                |
+                    +-----------+-----------+
+                    |           |           |
                jurnal_mingguan  bimbingan   laporan_akhir
-                    │
+                    |
                jurnal_harian
 
-users ──── profil_mahasiswa (1:1, hanya mahasiswa)
-users ──── perusahaan (1:1, hanya pic_perusahaan via users.perusahaan_id)
+users ---- profil_mahasiswa (1:1, hanya mahasiswa)
+users ---- perusahaan (1:1, hanya pic_perusahaan via users.perusahaan_id)
 
-penilaian ──< anggota_pengajuan
-dokumen   ──< pengajuan (+ opsional ke anggota_pengajuan)
-notifications ──< users (polimorfik, standar Laravel)
-log_aktivitas ──< users + morphs('subjek')
+penilaian --< anggota_pengajuan
+dokumen   --< pengajuan (+ opsional ke anggota_pengajuan)
+notifications --< users (polimorfik, standar Laravel)
+log_aktivitas --< users + morphs('subjek')
 pengaturan (key-value, standalone)
 ```
 
@@ -102,47 +106,47 @@ pengaturan (key-value, standalone)
 
 | # | Tabel | Deskripsi Singkat | Soft Delete |
 |---|---|---|---|
-| 1 | `perusahaan` | Master perusahaan; status: `usulan`, `terverifikasi` | ✓ |
-| 2 | `periode` | Periode pengajuan (tanggal buka/tutup & tanggal PKL) | ✓ |
-| 3 | `pengaturan` | Key-value pengaturan sistem (bobot nilai, template surat, dll.) | ✗ |
-| 4 | `users` | Semua pengguna; kolom `peran` membedakan role | ✓ |
-| 5 | `profil_mahasiswa` | Detail profil mahasiswa (1:1 dengan users) | ✗ |
-| 6 | `pengajuan` | Pengajuan magang per kelompok per periode | ✓ |
-| 7 | `anggota_pengajuan` | Anggota kelompok; pivot mahasiswa ↔ pengajuan | ✓ |
-| 8 | `dokumen` | Semua berkas unggahan terkait pengajuan | ✓ |
-| 9 | `jurnal_mingguan` | Jurnal mingguan per anggota | ✓ |
-| 10 | `jurnal_harian` | Jurnal harian per anggota; terhubung ke jurnal_mingguan | ✓ |
-| 11 | `bimbingan` | Pengajuan bimbingan per anggota | ✓ |
-| 12 | `laporan_akhir` | Laporan akhir per anggota (versioning) | ✓ |
-| 13 | `penilaian` | Nilai lapangan & pembimbing per anggota | ✗ |
-| 14 | `log_aktivitas` | Audit log semua aksi penting | ✗ |
-| 15 | `notifications` | Notifikasi database standar Laravel | ✗ |
+| 1 | `perusahaan` | Master perusahaan; status: `usulan`, `terverifikasi` | Y |
+| 2 | `periode` | Periode pengajuan (tanggal buka/tutup & tanggal PKL) | Y |
+| 3 | `pengaturan` | Key-value pengaturan sistem (bobot nilai, template surat, dll.) | N |
+| 4 | `users` | Semua pengguna; kolom `peran` membedakan role | Y |
+| 5 | `profil_mahasiswa` | Detail profil mahasiswa (1:1 dengan users) | N |
+| 6 | `pengajuan` | Pengajuan magang per kelompok per periode | Y |
+| 7 | `anggota_pengajuan` | Anggota kelompok; pivot mahasiswa <-> pengajuan | Y |
+| 8 | `dokumen` | Semua berkas unggahan terkait pengajuan | Y |
+| 9 | `jurnal_mingguan` | Jurnal mingguan per anggota | Y |
+| 10 | `jurnal_harian` | Jurnal harian per anggota; terhubung ke jurnal_mingguan | Y |
+| 11 | `bimbingan` | Pengajuan bimbingan per anggota | Y |
+| 12 | `laporan_akhir` | Laporan akhir per anggota (versioning) | Y |
+| 13 | `penilaian` | Nilai lapangan & pembimbing per anggota | N |
+| 14 | `log_aktivitas` | Audit log semua aksi penting | N |
+| 15 | `notifications` | Notifikasi database standar Laravel | N |
 
 ### Status Pengajuan (State Machine)
 
 ```
 draft
-  └─ [Mahasiswa ajukan] → diajukan
-        └─ [PIC tolak dengan catatan] → revisi  ──→ diajukan (ajukan ulang)
-        └─ [PIC tolak seutuhnya]      → ditolak_final  (terminal)
-        └─ [PIC setujui]              → disetujui_pic
-              └─ [KPS kembalikan]     → dikembalikan_kps  ──→ disetujui_pic (diteruskan kembali)
-              └─ [KPS setujui]        → disetujui_kps
-                    └─ [PIC unggah surat TTD] → surat_terbit
-                          └─ [PIC catat diterima] → diterima
-                                └─ [PKL berjalan]  → berjalan (via anggota_pengajuan.status_magang)
-                                └─ [PIC batalkan]  → dibatalkan  (terminal)
-                          └─ [PIC batalkan]        → dibatalkan  (terminal)
+  +- [Mahasiswa ajukan] -> diajukan
+        +- [PIC tolak dengan catatan] -> revisi --> diajukan (ajukan ulang)
+        +- [PIC tolak seutuhnya]      -> ditolak_final  (terminal)
+        +- [PIC setujui]              -> disetujui_pic
+              +- [KPS kembalikan]     -> dikembalikan_kps --> disetujui_pic (diteruskan kembali)
+              +- [KPS setujui]        -> disetujui_kps
+                    +- [PIC unggah surat TTD] -> surat_terbit
+                          +- [PIC catat diterima] -> diterima
+                                +- [PKL berjalan]  -> berjalan (via anggota_pengajuan.status_magang)
+                                +- [PIC batalkan]  -> dibatalkan  (terminal)
+                          +- [PIC batalkan]        -> dibatalkan  (terminal)
 ```
 
 ### Status Jurnal Mingguan
-`menunggu` → `disetujui` / `revisi` (per dosen dan per perusahaan secara independen)
+`menunggu` -> `disetujui` / `revisi` (per dosen dan per perusahaan secara independen)
 
 ### Status Bimbingan
-`diajukan` → `disetujui` / `revisi`
+`diajukan` -> `disetujui` / `revisi`
 
 ### Status Laporan Akhir
-`menunggu` → `disetujui` / `revisi` (per perusahaan, dosen, dan KPS secara independen)
+`menunggu` -> `disetujui` / `revisi` (per perusahaan, dosen, dan KPS secara independen)
 
 ### Tipe Dokumen (`dokumen.jenis`)
 | Nilai | Keterangan | Siapa Upload |
@@ -159,27 +163,27 @@ draft
 
 ## 5. Arsitektur Kode
 
-### Pola Wajib: Controller → Service → Repository
+### Pola Wajib: Controller -> Service -> Repository
 
 ```
 app/
-├── Http/
-│   ├── Controllers/
-│   │   ├── Auth/
-│   │   ├── Mahasiswa/
-│   │   ├── PicMagang/
-│   │   ├── Kps/
-│   │   ├── Dosen/
-│   │   ├── PicPerusahaan/
-│   │   └── Admin/
-│   ├── Requests/          ← Form Request untuk validasi input & MIME berkas
-│   └── Middleware/
-├── Services/              ← Logika bisnis (status machine, kalkulasi nilai, kirim notifikasi)
-├── Repositories/          ← Interaksi database (query Eloquent)
-├── Models/
-├── Policies/              ← Satu Policy per Model utama
-├── Notifications/         ← Kelas notifikasi (database + email)
-└── Providers/
++-- Http/
+|   +-- Controllers/
+|   |   +-- Auth/
+|   |   +-- Mahasiswa/
+|   |   +-- PicMagang/
+|   |   +-- Kps/
+|   |   +-- Dosen/
+|   |   +-- PicPerusahaan/
+|   |   +-- Admin/
+|   +-- Requests/          <- Form Request untuk validasi input & MIME berkas
+|   +-- Middleware/
++-- Services/              <- Logika bisnis (status machine, kalkulasi nilai, kirim notifikasi)
++-- Repositories/          <- Interaksi database (query Eloquent)
++-- Models/
++-- Policies/              <- Satu Policy per Model utama
++-- Notifications/         <- Kelas notifikasi (database + email)
++-- Providers/
 ```
 
 **Aturan:**
@@ -193,19 +197,19 @@ app/
 
 ```
 resources/views/
-├── layouts/
-│   ├── app.blade.php       ← Layout utama (sidebar MaterialPro)
-│   └── auth.blade.php      ← Layout halaman login
-├── auth/
-│   └── login.blade.php
-├── mahasiswa/
-├── pic-magang/
-├── kps/
-├── dosen/
-├── pic-perusahaan/
-├── admin/
-├── components/             ← Blade components (alert, card, modal, dll.)
-└── partials/               ← Partial views (sidebar, navbar, dll.)
++-- layouts/
+|   +-- app.blade.php       <- Layout utama (sidebar MaterialPro)
+|   +-- auth.blade.php      <- Layout halaman login
++-- auth/
+|   +-- login.blade.php
++-- mahasiswa/
++-- pic-magang/
++-- kps/
++-- dosen/
++-- pic-perusahaan/
++-- admin/
++-- components/             <- Blade components (alert, card, modal, dll.)
++-- partials/               <- Partial views (sidebar, navbar, dll.)
 ```
 
 ### Integrasi MaterialPro Bootstrap 5 v10
@@ -219,38 +223,58 @@ Template MaterialPro adalah pre-built HTML + compiled assets. Strategi integrasi
 
 ---
 
-## 6. Fitur Utama dan Kode SKPL
+## 6. Peta Fitur ke Phase
 
 | Kode SKPL | Fitur | Phase |
 |---|---|---|
-| F-01, F-02, F-03, F-04 | Autentikasi & RBAC | 1 |
-| F-10 | Profil mahasiswa | 1 |
-| F-60, F-61, F-22 | Admin: pengaturan, master data, perusahaan | 1 |
-| F-11, F-12, F-13, F-18 | Pengajuan magang (draft & kelompok) | 2 |
-| F-20, F-21, F-29, F-14 | PIC Magang: verifikasi berkas & pengumuman | 2 |
-| F-30, F-31, F-32, F-33 | KPS: persetujuan & dashboard | 2 |
-| F-26, F-27, F-28 | PIC Magang: surat, penerimaan, pembatalan | 2 |
-| F-15, F-23 | Surat, penetapan dosen | 2 |
-| F-16, F-19 | Jurnal harian & mingguan | 3 |
-| F-40, F-50 | Dosen & PIC Perusahaan: review jurnal | 3 |
-| F-54, F-55, F-56, F-57 | Bimbingan | 3 |
-| F-17 | Laporan akhir | 4 |
-| F-41, F-51, F-52, F-53 | Penilaian & legalisasi laporan | 4 |
-| F-34 | KPS: selesaikan magang | 4 |
-| F-24 | Rekap & ekspor Excel/PDF | 4 |
-| F-58 | Notifikasi | (sepanjang development) |
-| F-59, F-63 | Log audit & manajemen pengguna Admin | 1 |
-| NF-01, NF-02 | Keamanan: CSRF, validasi MIME, signed URL | (sepanjang development) |
-| NF-03 | Performa: pagination, eager loading, index DB | (sepanjang development) |
-| NF-04 | Responsif, bahasa Indonesia | (sepanjang development) |
+| F-01, F-02, F-04 | Autentikasi & RBAC: login, logout, middleware, redirect per peran | 1 |
+| F-03 | PIC Perusahaan: wajib ganti password pertama kali | 2 |
+| F-10 | Mahasiswa: profil (isi & edit) | 3 |
+| F-63 | Admin: manajemen pengguna & peran | 4 |
+| F-60 | Admin: CRUD periode pengajuan & pengaturan sistem (bobot nilai) | 5 |
+| F-22 | Admin & PIC Magang: CRUD perusahaan (master) | 5 |
+| F-59 | Admin: tampilan log audit | 5 |
+| F-11, F-12, F-18 | Mahasiswa: buat pengajuan kelompok (draft, pilih periode & perusahaan, tambah anggota) | 6 |
+| F-13 | Mahasiswa: unggah dokumen pendukung (proposal, FORM 004) | 7 |
+| F-14 | Mahasiswa: lihat status & riwayat, ajukan, ajukan ulang | 7 |
+| F-20, F-21 | PIC Magang: antrean berkas, verifikasi, setujui/tolak/revisi/kembalikan KPS | 8 |
+| F-30, F-32, F-33 | KPS: persetujuan pengajuan, isi nomor surat, kembalikan, dashboard statistik | 9 |
+| F-31 | Generate draf PDF Surat Permohonan PKL (FORM PKL 002) | 9 |
+| F-26, F-15 | PIC Magang: upload surat TTD -> mahasiswa unduh (status `surat_terbit`) | 10 |
+| F-27, F-23 | PIC Magang: catat penerimaan, buat akun PIC Perusahaan, tetapkan dosen, generate Surat Pengantar | 10 |
+| F-29 | PIC Magang: pengumuman jadwal & penempatan | 10 |
+| F-28 | PIC Magang: batalkan pengajuan | 10 |
+| F-58a | Notifikasi perubahan status pengajuan (Phase 6-10) | 10 |
+| F-16 | Mahasiswa: jurnal harian (isi, edit, lampiran foto) | 11 |
+| F-19 | Mahasiswa: ajukan jurnal mingguan | 11 |
+| F-40, F-50 | Dosen & PIC Perusahaan: review & setujui/revisi jurnal mingguan | 12 |
+| F-54, F-55, F-56 | Mahasiswa & Dosen: pengajuan bimbingan + persetujuan (offline/daring, validasi tautan) | 13 |
+| F-57 | Mahasiswa: unggah foto bukti bimbingan (hanya setelah disetujui) | 13 |
+| F-58b | Notifikasi jurnal & bimbingan (Phase 11-13) | 13 |
+| F-17 | Mahasiswa: upload laporan akhir & revisi berulang | 14 |
+| F-41, F-52, F-34 | Dosen, PIC Perusahaan, KPS: review & legalisasi laporan akhir; KPS tandai Selesai | 15 |
+| F-51, F-53 | PIC Perusahaan: nilai lapangan (FORM PKL 006) + saran masukan (FORM PKL 008) | 16 |
+| F-41b | Dosen: nilai pembimbing (FORM PKL 007); sistem hitung nilai akhir otomatis | 16 |
+| F-58c | Notifikasi laporan & penilaian (Phase 14-16) | 16 |
+| F-24 | Rekap & ekspor Excel/PDF (permohonan + nilai) | 17 |
+| NF-01, NF-02 | Keamanan: CSRF, validasi MIME, signed URL | (diterapkan sepanjang development) |
+| NF-03 | Performa: pagination, eager loading, index DB | (diterapkan sepanjang development) |
+| NF-04 | Responsif, bahasa Indonesia | (diterapkan sepanjang development) |
 | NF-05 | Soft delete | (semua tabel transaksi sudah disiapkan) |
 
 ---
 
 ## 7. Rencana Pengembangan Bertahap (Phases)
 
-### Phase 0 — Persiapan & Setup Infrastruktur ✅ SELESAI (2026-10-28)
-**Tujuan:** Project siap dijalankan, aset terintegrasi, database termigrasi.
+> **Prinsip:** 1 phase = 1 fitur yang dapat diuji secara mandiri.
+> Setiap phase memiliki **Prasyarat**, **Lingkup**, dan **Kriteria Selesai** yang jelas.
+> Selesaikan dan uji setiap phase sebelum melanjutkan ke phase berikutnya.
+
+---
+
+### Phase 0 — Persiapan & Setup Infrastruktur SELESAI (2026-10-28)
+
+**Prasyarat:** —
 
 **Hasil:**
 - [x] Dependensi: `barryvdh/laravel-dompdf v3.1.2`, `maatwebsite/excel 3.1.70`
@@ -265,97 +289,375 @@ Template MaterialPro adalah pre-built HTML + compiled assets. Strategi integrasi
 
 ---
 
-### Phase 1 — Autentikasi, RBAC, Profil, dan Master Data Admin
-**Tujuan:** Semua peran dapat login/logout, admin dapat mengelola data dasar sistem.
+### Phase 1 — Autentikasi & RBAC
+> **Phase 1 selesai** — 2026-10-30
+
+**Fitur yang diuji:** Semua peran dapat login dan logout; akses halaman dibatasi per peran.
+
+**Prasyarat:** Phase 0 selesai.
 
 **Lingkup:**
-- [ ] Model: `User` (perbarui), `ProfilMahasiswa`, `Perusahaan`, `Periode`, `Pengaturan`
-- [ ] Autentikasi bawaan Laravel: login (email + password), logout, redirect per peran
-- [ ] Middleware guard peran (`CheckPeran`)
-- [ ] Policies: `UserPolicy`, `PerusahaanPolicy`, `PeriodePolicy`
-- [ ] Halaman profil mahasiswa (isi & edit) — F-10
-- [ ] Admin: CRUD pengguna & peran, isi `status_aktif` & `ipk` mahasiswa — F-61, F-63
-- [ ] Admin: CRUD periode pengajuan — F-60
-- [ ] Admin: CRUD perusahaan — F-22
-- [ ] Admin: pengaturan bobot nilai & template surat — F-60
-- [ ] Admin: log audit (tampilan) — F-59
-- [ ] PIC Perusahaan: wajib ganti password saat login pertama — F-03
-- [ ] Seeders: akun admin, pic_magang, kps default untuk testing
+- [x] `AuthController`: login (POST email+password), logout
+- [x] Form Request: `LoginRequest` (validasi email & password)
+- [x] Middleware `CheckPeran`: cegah akses lintas peran
+- [x] Redirect pasca login ke dashboard sesuai peran
+- [x] Halaman login (`auth/login.blade.php`) menggunakan layout `auth.blade.php`
+- [x] Dashboard stub per peran (6 halaman sederhana, cukup "Selamat datang, [nama]")
+- [x] Proteksi semua route dengan `middleware('auth')` + `middleware('peran:...')`
 
-**Hasil Akhir:** Login/logout berfungsi untuk semua peran, admin dapat mengelola data master, profil mahasiswa dapat diisi.
+**Kriteria Selesai:**
+- Login berhasil untuk semua 5 peran akun dev
+- Akses URL peran lain di-redirect ke halaman 403
+- Logout menghapus sesi dan redirect ke halaman login
 
 ---
 
-### Phase 2 — Pengajuan, Verifikasi, dan Penempatan
-**Tujuan:** Alur pengajuan magang berjalan penuh dari draft hingga mahasiswa ditempatkan.
+### Phase 2 — Ganti Password PIC Perusahaan
+**Fitur yang diuji:** PIC Perusahaan wajib ganti password saat login pertama sebelum mengakses sistem.
+
+**Prasyarat:** Phase 1 selesai.
 
 **Lingkup:**
-- [ ] Model: `Pengajuan`, `AnggotaPengajuan`, `Dokumen`, `LogAktivitas`
-- [ ] Service: `PengajuanService` (validasi kelompok: aktif, IPK ≥ 2.00, tidak di kelompok aktif lain; state machine status)
-- [ ] Repository: `PengajuanRepository`, `DokumenRepository`
-- [ ] Mahasiswa: form pengajuan, pilih periode & perusahaan, tambah anggota via NPM, unggah proposal — F-11, F-12, F-13, F-18
-- [ ] Mahasiswa: usulan perusahaan baru — F-12
-- [ ] Mahasiswa: lihat status & riwayat, ajukan ulang — F-14
-- [ ] PIC Magang: antrean berkas, verifikasi perusahaan baru, setujui/tolak/minta revisi — F-20, F-21, F-22
-- [ ] PIC Magang: tinjau ulang pengajuan yang dikembalikan KPS — F-21
-- [ ] KPS: daftar pengajuan menunggu persetujuan, setujui + isi nomor surat, kembalikan — F-30, F-32
-- [ ] KPS: dashboard statistik periode & status — F-33
-- [ ] Generate draf PDF Surat Permohonan PKL (tanpa TTD) — F-31
-- [ ] PIC Magang: unggah surat TTD, status → `surat_terbit` — F-26
-- [ ] Mahasiswa: unduh surat TTD — F-15
-- [ ] PIC Magang: catat penerimaan, buat akun PIC Perusahaan, tetapkan dosen per mahasiswa — F-23, F-27
-- [ ] PIC Magang: generate draf Surat Pengantar Pelaksanaan (FORM PKL 003 otomatis dari profil) — F-27
-- [ ] PIC Magang: batalkan pengajuan (dari `surat_terbit` atau `diterima`) — F-28
-- [ ] PIC Magang: pengumuman jadwal PKL, daftar dosen, daftar perusahaan — F-29
-- [ ] Log audit untuk semua perubahan status — F-59
-- [ ] Notifikasi perubahan status (database + email) — F-58
-- [ ] Rekap Permohonan dengan ekspor Excel/PDF — F-24
+- [ ] Middleware `WajibGantiPassword`: redirect jika `wajib_ganti_password = true`
+- [ ] `Auth/GantiPasswordController`: tampilkan form, proses ganti, set flag ke false
+- [ ] Halaman ganti password (`auth/ganti-password.blade.php`)
+- [ ] Form Request: `GantiPasswordRequest`
 
-**Hasil Akhir:** Seluruh alur dari mahasiswa mengajukan hingga ditempatkan berjalan dan terekam.
+**Kriteria Selesai:**
+- PIC Perusahaan dengan `wajib_ganti_password = true` diarahkan ke form ganti password setelah login
+- Setelah ganti password berhasil, dapat mengakses dashboard normal
+- Peran lain tidak terpengaruh middleware ini
 
 ---
 
-### Phase 3 — Jurnal dan Bimbingan
-**Tujuan:** Mahasiswa dapat mengisi jurnal dan mengajukan bimbingan; dosen dan PIC Perusahaan dapat meresponsnya.
+### Phase 3 — Profil Mahasiswa
+**Fitur yang diuji:** Mahasiswa dapat mengisi dan mengedit data profilnya lengkap.
+
+**Prasyarat:** Phase 1 selesai.
 
 **Lingkup:**
-- [ ] Model: `JurnalMingguan`, `JurnalHarian`, `Bimbingan`
-- [ ] Service: `JurnalService`, `BimbinganService`
-- [ ] Mahasiswa: isi jurnal harian (tanggal, kegiatan, jam mulai-selesai, foto) — F-16
-- [ ] Mahasiswa: ajukan jurnal mingguan (kumpulkan jurnal harian 1 minggu) — F-19
-- [ ] Dosen Pembimbing: setujui/minta revisi jurnal mingguan — F-40
-- [ ] PIC Perusahaan: setujui/minta revisi jurnal mingguan — F-50
-- [ ] Mahasiswa: ajukan bimbingan (jadwal, tipe offline/daring, tautan jika daring) — F-54, F-55
-- [ ] Dosen Pembimbing: setujui/minta revisi pengajuan bimbingan — F-56
-- [ ] Mahasiswa: unggah foto bukti bimbingan (hanya setelah disetujui dosen) — F-57
-- [ ] PIC Magang: pantau jurnal & bimbingan semua mahasiswa — F-25
-- [ ] KPS: progres jurnal & bimbingan di dashboard — F-33
-- [ ] Notifikasi jurnal & bimbingan — F-58
+- [ ] Model: `ProfilMahasiswa` (relasi hasOne dari User)
+- [ ] Repository: `ProfilMahasiswaRepository`
+- [ ] `Mahasiswa/ProfilController`: show (lihat profil), edit, update
+- [ ] Form Request: `ProfilMahasiswaRequest` (semua field wajib)
+- [ ] View: `mahasiswa/profil/edit.blade.php`
+- [ ] Mahasiswa belum isi profil -> redirect ke halaman profil saat akses halaman lain
 
-**Hasil Akhir:** Modul jurnal dan bimbingan berjalan lengkap dengan alur persetujuan dua pihak.
+**Kriteria Selesai:**
+- Mahasiswa dapat menyimpan semua field profil (nama, NPM, prodi, kelas, jenis kelamin, alamat KTP, alamat domisili, no HP)
+- Data tersimpan di `profil_mahasiswa`
+- Validasi: semua field wajib, NPM unik
 
 ---
 
-### Phase 4 — Laporan Akhir, Penilaian, dan Penyelesaian
-**Tujuan:** Siklus magang selesai dengan laporan yang dilegalisasi dan nilai akhir terhitung.
+### Phase 4 — Manajemen Pengguna (Admin)
+**Fitur yang diuji:** Admin dapat mengelola akun semua peran dan mengisi data akademik mahasiswa.
+
+**Prasyarat:** Phase 1 selesai.
 
 **Lingkup:**
-- [ ] Model: `LaporanAkhir`, `Penilaian`
-- [ ] Service: `LaporanAkhirService`, `PenilaianService` (hitung nilai akhir otomatis)
-- [ ] Mahasiswa: unggah laporan akhir, revisi berulang — F-17
-- [ ] Dosen Pembimbing: setujui/minta revisi laporan akhir — F-41
-- [ ] PIC Perusahaan: setujui/minta revisi laporan akhir — F-52
-- [ ] KPS: legalisasi laporan akhir — F-34
-- [ ] PIC Perusahaan: input nilai lapangan (6 kriteria berbobot, FORM PKL 006) — F-51
-- [ ] Dosen Pembimbing: input nilai pembimbing (2 kriteria berbobot, FORM PKL 007) — F-41
-- [ ] PIC Perusahaan: isi lembar saran & masukan (FORM PKL 008) — F-53
-- [ ] Mahasiswa: unggah FORM PKL 009 (Surat Keterangan Perusahaan) — F-13
-- [ ] Sistem: hitung nilai akhir otomatis (bobot dari tabel `pengaturan`) — SKPL 4.3 poin 5
-- [ ] KPS: tandai magang mahasiswa Selesai — F-34
-- [ ] Notifikasi laporan & penilaian — F-58
-- [ ] Rekap & ekspor Excel/PDF (nilai & laporan) — F-24
+- [ ] Repository: `UserRepository`
+- [ ] Service: `UserService`
+- [ ] `Admin/PenggunaController`: index, create, store, edit, update, destroy (soft delete)
+- [ ] Form Request: `BuatPenggunaRequest`, `UpdatePenggunaRequest`
+- [ ] Policy: `UserPolicy`
+- [ ] Views: `admin/pengguna/` (index tabel + filter peran, form buat, form edit)
+- [ ] Admin dapat update `status_aktif` dan `ipk` di `profil_mahasiswa`
+- [ ] Setiap aksi dicatat ke `log_aktivitas`
 
-**Hasil Akhir:** Siklus magang penuh dari awal hingga akhir berjalan; nilai akhir terhitung otomatis.
+**Kriteria Selesai:**
+- Admin dapat membuat, mengedit, menonaktifkan, soft-delete akun
+- Filter berdasarkan peran berfungsi
+- IPK dan status aktif mahasiswa dapat diupdate lewat form edit
+- Aksi tercatat di `log_aktivitas`
+
+---
+
+### Phase 5 — Master Data Admin (Periode, Perusahaan, Pengaturan, Log Audit)
+**Fitur yang diuji:** Admin dapat mengelola data master sistem dan melihat seluruh log audit.
+
+**Prasyarat:** Phase 4 selesai.
+
+**Lingkup:**
+- [ ] Model: `Periode`, `Perusahaan`, `Pengaturan`, `LogAktivitas`
+- [ ] Repository: `PeriodeRepository`, `PerusahaanRepository`, `PengaturanRepository`, `LogAktivitasRepository`
+- [ ] `Admin/PeriodeController`: CRUD periode (tanggal buka/tutup + tanggal PKL)
+- [ ] `Admin/PerusahaanController`: CRUD perusahaan master, ubah status usulan -> terverifikasi
+- [ ] `Admin/PengaturanController`: edit bobot nilai & nama institusi
+- [ ] `Admin/LogController`: tampilkan log audit dengan pagination + filter
+- [ ] Policy: `PeriodePolicy`, `PerusahaanPolicy`
+
+**Kriteria Selesai:**
+- Admin dapat membuka/menutup periode
+- Admin dapat mengelola perusahaan master dan verifikasi perusahaan usulan
+- Bobot nilai tersimpan dan dapat dibaca ulang
+- Log audit menampilkan riwayat dengan filter tanggal/aksi
+
+---
+
+### Phase 6 — Buat Pengajuan Kelompok (Draft)
+**Fitur yang diuji:** Mahasiswa dapat membuat pengajuan magang kelompok (1-4 orang) dalam status draft.
+
+**Prasyarat:** Phase 3 dan Phase 5 selesai.
+
+**Lingkup:**
+- [ ] Model: `Pengajuan`, `AnggotaPengajuan`
+- [ ] Repository: `PengajuanRepository`, `AnggotaPengajuanRepository`
+- [ ] Service: `PengajuanService` — validasi anggota (aktif, IPK >= 2.00, belum di kelompok aktif lain, maks 4 orang)
+- [ ] `Mahasiswa/PengajuanController`: index, create, store
+- [ ] Form Request: `BuatPengajuanRequest`
+- [ ] Views: `mahasiswa/pengajuan/index.blade.php`, `mahasiswa/pengajuan/create.blade.php`
+- [ ] Pencarian anggota via NPM (endpoint JSON sederhana)
+- [ ] Mahasiswa dapat mengeluarkan anggota selama status masih `draft`
+- [ ] Mahasiswa dapat mengusulkan perusahaan baru (status -> `usulan`)
+
+**Kriteria Selesai:**
+- Pengajuan tersimpan di status `draft`
+- Sistem menolak anggota tidak aktif / IPK < 2.00 / sudah di kelompok lain
+- Batas 4 anggota ditegakkan
+- Mahasiswa tidak bisa buat pengajuan baru jika punya kelompok aktif
+
+---
+
+### Phase 7 — Unggah Dokumen & Ajukan Pengajuan
+**Fitur yang diuji:** Mahasiswa dapat mengunggah proposal dan mengajukan pengajuan dari draft ke diajukan.
+
+**Prasyarat:** Phase 6 selesai.
+
+**Lingkup:**
+- [ ] Model: `Dokumen`
+- [ ] Repository: `DokumenRepository`
+- [ ] Service: `DokumenService` — simpan ke storage privat, generate signed URL
+- [ ] `Mahasiswa/PengajuanController`: show (detail + status + riwayat), update status -> diajukan
+- [ ] `Mahasiswa/DokumenController`: store (unggah), destroy (hapus saat draft)
+- [ ] Form Request: `UnggahDokumenRequest` (PDF, maks 5 MB, MIME check)
+- [ ] Views: `mahasiswa/pengajuan/show.blade.php`
+
+**Kriteria Selesai:**
+- Upload PDF berhasil; file non-PDF atau > 5 MB ditolak dengan pesan error
+- Signed URL berfungsi untuk preview/download dokumen
+- Tombol Ajukan hanya aktif jika proposal sudah ada
+- Status berubah ke `diajukan` setelah diklik
+
+---
+
+### Phase 8 — Verifikasi Berkas (PIC Magang)
+**Fitur yang diuji:** PIC Magang dapat memverifikasi perusahaan baru dan mengambil keputusan atas setiap pengajuan.
+
+**Prasyarat:** Phase 7 selesai.
+
+**Lingkup:**
+- [ ] Service: `VerifikasiService` — transisi status (setujui, tolak catatan, tolak final)
+- [ ] `PicMagang/PengajuanController`: index (antrean + filter), show, setujui, tolak, revisi, tinjau ulang (dari dikembalikan_kps)
+- [ ] `PicMagang/PerusahaanController`: verifikasi usulan (status -> terverifikasi)
+- [ ] Form Request: `KeputusanPengajuanRequest`
+- [ ] Views: `pic-magang/pengajuan/`
+- [ ] Log audit setiap perubahan status
+- [ ] Notifikasi ke mahasiswa (revisi/tolak) dan KPS (disetujui_pic)
+
+**Kriteria Selesai:**
+- Tiga aksi berfungsi dan mengubah status dengan benar
+- Verifikasi perusahaan baru berfungsi
+- Notifikasi terkirim ke pihak terkait
+- Log audit tercatat untuk setiap keputusan
+
+---
+
+### Phase 9 — Persetujuan KPS & Draf Surat Permohonan PKL
+**Fitur yang diuji:** KPS dapat menyetujui atau mengembalikan pengajuan; sistem men-generate draf PDF otomatis.
+
+**Prasyarat:** Phase 8 selesai.
+
+**Lingkup:**
+- [ ] `Kps/PengajuanController`: index, show, setujui (isi nomor surat), kembalikan
+- [ ] Service: `KpsService` — transisi ke `disetujui_kps` atau `dikembalikan_kps`
+- [ ] `PdfService`: generate Surat Permohonan PKL (FORM PKL 002) via DomPDF
+- [ ] Blade template PDF: `pdf/surat-permohonan.blade.php`
+- [ ] Form Request: `PersetujuanKpsRequest` (nomor surat wajib saat setujui)
+- [ ] `Kps/DashboardController`: statistik jumlah pengajuan per status
+- [ ] Views: `kps/pengajuan/`, `kps/dashboard.blade.php`
+- [ ] Notifikasi ke PIC Magang (dikembalikan) dan mahasiswa (disetujui_kps)
+
+**Kriteria Selesai:**
+- KPS dapat setujui dengan nomor surat; status -> `disetujui_kps`
+- Nomor surat tersimpan unik
+- PDF draf dapat di-preview/download (tanpa TTD)
+- Kembalikan dengan catatan berfungsi; status -> `dikembalikan_kps`
+- Dashboard statistik tampil
+
+---
+
+### Phase 10 — Surat TTD, Penerimaan, Penempatan & Pembatalan
+**Fitur yang diuji:** Seluruh alur pasca persetujuan KPS hingga mahasiswa resmi ditempatkan atau dibatalkan.
+
+**Prasyarat:** Phase 9 selesai.
+
+**Lingkup:**
+- [ ] `PicMagang/SuratController`: upload surat TTD (status -> surat_terbit), generate Surat Pengantar Pelaksanaan PDF
+- [ ] `PicMagang/PenerimaanController`: catat penerimaan (status -> diterima), buat akun PIC Perusahaan, tetapkan dosen per mahasiswa
+- [ ] `PicMagang/PengumumanController`: kelola pengumuman jadwal PKL, daftar dosen, daftar perusahaan
+- [ ] `PicMagang/PembatalanController`: batalkan dari `surat_terbit` atau `diterima` -> `dibatalkan`
+- [ ] `Mahasiswa/SuratController`: unduh surat TTD via signed URL
+- [ ] `PdfService`: generate Surat Pengantar Pelaksanaan + Biodata (FORM PKL 003 dari profil mahasiswa)
+- [ ] Blade template PDF: `pdf/surat-pengantar.blade.php`
+- [ ] Notifikasi ke mahasiswa & dosen saat ditempatkan; notifikasi pembatalan
+
+**Kriteria Selesai:**
+- PIC Magang upload surat TTD; mahasiswa dapat mengunduhnya
+- Akun PIC Perusahaan dibuat dengan `wajib_ganti_password = true`
+- Dosen ditetapkan per mahasiswa (bukan per kelompok)
+- PDF Surat Pengantar + Biodata dapat di-generate
+- Pembatalan dari dua status berbeda berfungsi
+
+---
+
+### Phase 11 — Jurnal Harian & Mingguan (Mahasiswa)
+**Fitur yang diuji:** Mahasiswa aktif magang dapat mengisi jurnal harian dan mengajukan jurnal mingguan.
+
+**Prasyarat:** Phase 10 selesai.
+
+**Lingkup:**
+- [ ] Model: `JurnalHarian`, `JurnalMingguan`
+- [ ] Repository: `JurnalHarianRepository`, `JurnalMingguanRepository`
+- [ ] Service: `JurnalService` — validasi tanggal unik, kumpulkan jurnal harian ke minggu
+- [ ] `Mahasiswa/JurnalHarianController`: CRUD (tanggal, kegiatan, jam mulai-selesai, foto opsional)
+- [ ] `Mahasiswa/JurnalMingguanController`: index, create (pilih rentang minggu), store (ajukan)
+- [ ] Form Request: `JurnalHarianRequest` (foto JPG/PNG maks 2 MB jika ada), `AjukanJurnalRequest`
+- [ ] Views: `mahasiswa/jurnal/`
+- [ ] Foto disimpan di `storage/app/private/jurnal/{anggota_id}/`
+
+**Kriteria Selesai:**
+- Satu entri jurnal per tanggal per mahasiswa
+- Foto opsional — hanya JPG/PNG <= 2 MB
+- Jurnal mingguan yang sudah diajukan tidak bisa diedit
+- Status jurnal mingguan awal -> `menunggu` (dosen & perusahaan)
+
+---
+
+### Phase 12 — Review Jurnal Mingguan (Dosen & PIC Perusahaan)
+**Fitur yang diuji:** Dosen dan PIC Perusahaan dapat mereview jurnal secara independen.
+
+**Prasyarat:** Phase 11 selesai.
+
+**Lingkup:**
+- [ ] `Dosen/JurnalController`: index, show, setujui, revisi (update `status_dosen`)
+- [ ] `PicPerusahaan/JurnalController`: index, show, setujui, revisi (update `status_perusahaan`)
+- [ ] Service: `JurnalService` — update status kolom masing-masing secara independen
+- [ ] `PicMagang/PemantauanController`: ringkasan progres jurnal semua mahasiswa aktif
+- [ ] Notifikasi ke mahasiswa saat jurnal disetujui/diminta revisi
+- [ ] Views: `dosen/jurnal/`, `pic-perusahaan/jurnal/`, `pic-magang/pemantauan.blade.php`
+
+**Kriteria Selesai:**
+- Dosen update `status_dosen`; PIC Perusahaan update `status_perusahaan` — independen satu sama lain
+- PIC Magang melihat ringkasan progres jurnal semua mahasiswa
+- Notifikasi terkirim ke mahasiswa
+
+---
+
+### Phase 13 — Bimbingan (Pengajuan, Persetujuan & Foto Bukti)
+**Fitur yang diuji:** Mahasiswa mengajukan bimbingan; dosen menyetujuinya; mahasiswa mengunggah foto bukti.
+
+**Prasyarat:** Phase 12 selesai.
+
+**Lingkup:**
+- [ ] Model: `Bimbingan`
+- [ ] Repository: `BimbinganRepository`
+- [ ] Service: `BimbinganService` — validasi tipe daring wajib tautan; cegah upload foto sebelum disetujui
+- [ ] `Mahasiswa/BimbinganController`: index, create, store, upload foto bukti
+- [ ] `Dosen/BimbinganController`: index, show, setujui, revisi
+- [ ] Form Request: `AjukanBimbinganRequest`, `UploadFotoBuktiRequest` (JPG/PNG maks 2 MB)
+- [ ] Foto disimpan di `storage/app/private/bimbingan/{anggota_id}/`
+- [ ] Notifikasi ke dosen saat diajukan; ke mahasiswa saat disetujui/revisi
+- [ ] Views: `mahasiswa/bimbingan/`, `dosen/bimbingan/`
+
+**Kriteria Selesai:**
+- Bimbingan daring tanpa tautan ditolak (validasi + DB constraint)
+- Foto bukti tidak bisa diupload sebelum status `disetujui`
+- DB check constraint tidak dilanggar
+- Notifikasi berfungsi
+
+---
+
+### Phase 14 — Laporan Akhir (Upload & Revisi)
+**Fitur yang diuji:** Mahasiswa dapat mengupload laporan akhir dan merevisinya berulang kali.
+
+**Prasyarat:** Phase 13 selesai.
+
+**Lingkup:**
+- [ ] Model: `LaporanAkhir`
+- [ ] Repository: `LaporanAkhirRepository`
+- [ ] Service: `LaporanAkhirService` — manajemen versi (auto-increment `versi`)
+- [ ] `Mahasiswa/LaporanController`: index (riwayat versi), create, store
+- [ ] Form Request: `UploadLaporanRequest` (PDF maks 5 MB)
+- [ ] Berkas disimpan di `storage/app/private/laporan/{anggota_id}/`
+- [ ] Notifikasi ke dosen, PIC Perusahaan, KPS saat laporan baru diupload
+- [ ] Views: `mahasiswa/laporan/`
+
+**Kriteria Selesai:**
+- Mahasiswa dapat upload laporan versi 1
+- Setelah ada catatan, dapat upload versi baru
+- Riwayat semua versi tampil dengan status masing-masing per pihak
+
+---
+
+### Phase 15 — Review Laporan Akhir & Penyelesaian Magang
+**Fitur yang diuji:** Tiga pihak mereview laporan; KPS menandai magang Selesai.
+
+**Prasyarat:** Phase 14 selesai.
+
+**Lingkup:**
+- [ ] `Dosen/LaporanController`: index, show, setujui, revisi
+- [ ] `PicPerusahaan/LaporanController`: index, show, setujui, revisi
+- [ ] `Kps/LaporanController`: index, show, legalisasi, tandai Selesai
+- [ ] Service: `LaporanAkhirService` — update status per kolom; `AnggotaPengajuanService` — set `status_magang = 'selesai'`
+- [ ] Views: `dosen/laporan/`, `pic-perusahaan/laporan/`, `kps/laporan/`
+- [ ] Notifikasi ke mahasiswa setiap ada keputusan
+
+**Kriteria Selesai:**
+- Tiga pihak review independen
+- KPS baru bisa tandai Selesai setelah ketiga status `disetujui`
+- `anggota_pengajuan.status_magang` berubah ke `selesai`
+
+---
+
+### Phase 16 — Penilaian Akhir
+**Fitur yang diuji:** PIC Perusahaan dan Dosen mengisi nilai; sistem menghitung nilai akhir otomatis.
+
+**Prasyarat:** Phase 15 selesai.
+
+**Lingkup:**
+- [ ] Model: `Penilaian`
+- [ ] Repository: `PenilaianRepository`
+- [ ] Service: `PenilaianService` — hitung total_nilai per penilai; hitung nilai_akhir di anggota_pengajuan
+- [ ] `PicPerusahaan/PenilaianController`: form 6 kriteria FORM PKL 006 + form saran masukan FORM PKL 008
+- [ ] `Dosen/PenilaianController`: form 2 kriteria FORM PKL 007
+- [ ] Form Request: `NilaiLapanganRequest`, `NilaiPembimbingRequest` (tiap kriteria 1-100)
+- [ ] Notifikasi ke KPS saat kedua nilai sudah diinput
+- [ ] Views: `pic-perusahaan/penilaian.blade.php`, `dosen/penilaian.blade.php`
+
+**Kriteria Selesai:**
+- Nilai tersimpan sebagai JSONB per kriteria + total_nilai tertimbang
+- `nilai_akhir` di `anggota_pengajuan` terhitung otomatis dari bobot di `pengaturan`
+- Perubahan bobot di pengaturan tidak mengubah nilai yang sudah dihitung (snapshot)
+
+---
+
+### Phase 17 — Rekap & Ekspor Excel/PDF
+**Fitur yang diuji:** PIC Magang dan KPS dapat mengekspor rekap permohonan dan nilai ke Excel/PDF.
+
+**Prasyarat:** Phase 16 selesai.
+
+**Lingkup:**
+- [ ] `PicMagang/RekapController`: rekap permohonan (filter periode, status, perusahaan), ekspor Excel & PDF
+- [ ] `Kps/RekapController`: rekap nilai akhir per periode, ekspor Excel & PDF
+- [ ] Laravel Excel Export classes: `RekapPermohonanExport`, `RekapNilaiExport`
+- [ ] Blade template PDF rekap: `pdf/rekap-permohonan.blade.php`, `pdf/rekap-nilai.blade.php`
+- [ ] Views: `pic-magang/rekap/`, `kps/rekap/`
+
+**Kriteria Selesai:**
+- Ekspor Excel menghasilkan .xlsx dengan data yang benar
+- Ekspor PDF menghasilkan file yang dapat dibuka
+- Filter periode dan status berfungsi sebelum ekspor
 
 ---
 
@@ -400,10 +702,10 @@ Template MaterialPro adalah pre-built HTML + compiled assets. Strategi integrasi
 ### Struktur Direktori Storage
 ```
 storage/app/private/
-├── pengajuan/{pengajuan_id}/          ← dokumen pengajuan
-├── jurnal/{anggota_id}/               ← foto jurnal harian
-├── bimbingan/{anggota_id}/            ← foto bukti bimbingan
-└── laporan/{anggota_id}/              ← laporan akhir
++-- pengajuan/{pengajuan_id}/          <- dokumen pengajuan
++-- jurnal/{anggota_id}/               <- foto jurnal harian
++-- bimbingan/{anggota_id}/            <- foto bukti bimbingan
++-- laporan/{anggota_id}/              <- laporan akhir
 ```
 
 ---
@@ -428,7 +730,7 @@ storage/app/private/
 
 ### Nilai Akhir
 ```
-Nilai Akhir = (Bobot Perusahaan × Total Nilai Lapangan) + (Bobot Dosen × Total Nilai Pembimbing)
+Nilai Akhir = (Bobot Perusahaan x Total Nilai Lapangan) + (Bobot Dosen x Total Nilai Pembimbing)
 ```
 - Bobot default: 50% lapangan + 50% dosen.
 - Bobot dapat diubah Admin melalui tabel `pengaturan` (kunci: `bobot_perusahaan`, `bobot_dosen`).
@@ -469,25 +771,24 @@ Kampus mewajibkan tanda tangan basah. Sistem hanya menyiapkan draf dan mencatat 
 
 Notifikasi dikirim via Laravel Notification (channel `database` + `mail`) pada kejadian berikut:
 
-| Kejadian | Penerima |
-|---|---|
-| Pengajuan dibuat (status `diajukan`) | PIC Magang |
-| Pengajuan disetujui PIC (status `disetujui_pic`) | KPS |
-| Pengajuan dikembalikan KPS | PIC Magang |
-| Pengajuan disetujui KPS (status `disetujui_kps`) | Mahasiswa |
-| Pengajuan diminta revisi PIC | Mahasiswa |
-| Pengajuan ditolak final | Mahasiswa |
-| Surat TTD diunggah (status `surat_terbit`) | Mahasiswa |
-| Penerimaan dicatat, dosen ditetapkan | Mahasiswa, Dosen Pembimbing |
-| Pengajuan dibatalkan | Mahasiswa |
-| Jurnal mingguan diajukan | Dosen Pembimbing, PIC Perusahaan |
-| Jurnal disetujui / diminta revisi | Mahasiswa |
-| Pengajuan bimbingan dibuat | Dosen Pembimbing |
-| Bimbingan disetujui / diminta revisi | Mahasiswa |
-| Laporan akhir diunggah/revisi | Dosen Pembimbing, PIC Perusahaan, KPS |
-| Laporan disetujui/diminta revisi oleh salah satu pihak | Mahasiswa |
-| Nilai diinput | KPS |
-| Magang ditandai Selesai | Mahasiswa |
+| Kejadian | Penerima | Disisipi di Phase |
+|---|---|---|
+| Pengajuan dibuat (status `diajukan`) | PIC Magang | 8 |
+| Pengajuan disetujui PIC (`disetujui_pic`) | KPS | 8 |
+| Pengajuan diminta revisi / ditolak final | Mahasiswa | 8 |
+| Pengajuan dikembalikan KPS | PIC Magang | 9 |
+| Pengajuan disetujui KPS (`disetujui_kps`) | Mahasiswa | 9 |
+| Surat TTD diunggah (`surat_terbit`) | Mahasiswa | 10 |
+| Penerimaan dicatat, dosen ditetapkan | Mahasiswa, Dosen Pembimbing | 10 |
+| Pengajuan dibatalkan | Mahasiswa | 10 |
+| Jurnal mingguan diajukan | Dosen Pembimbing, PIC Perusahaan | 12 |
+| Jurnal disetujui / diminta revisi | Mahasiswa | 12 |
+| Pengajuan bimbingan dibuat | Dosen Pembimbing | 13 |
+| Bimbingan disetujui / diminta revisi | Mahasiswa | 13 |
+| Laporan akhir diunggah/revisi | Dosen Pembimbing, PIC Perusahaan, KPS | 14 |
+| Laporan disetujui/diminta revisi | Mahasiswa | 15 |
+| Nilai lengkap diinput | KPS | 16 |
+| Magang ditandai Selesai | Mahasiswa | 15 |
 
 ---
 
@@ -505,12 +806,12 @@ Notifikasi dikirim via Laravel Notification (channel `database` + `mail`) pada k
 
 ---
 
-## 15. Dependensi yang Akan Ditambahkan
+## 15. Dependensi yang Digunakan
 
 | Package | Versi | Tujuan |
 |---|---|---|
-| `barryvdh/laravel-dompdf` | ^3.0 | Generate PDF draf surat |
-| `maatwebsite/excel` | ^3.1 | Ekspor rekap Excel & PDF |
+| `barryvdh/laravel-dompdf` | ^3.1 | Generate PDF draf surat |
+| `maatwebsite/excel` | ^3.1 | Ekspor rekap Excel |
 
 Belum ada package tambahan lain. Jangan tambahkan package baru tanpa konfirmasi pengguna.
 
@@ -534,5 +835,7 @@ Belum ada package tambahan lain. Jangan tambahkan package baru tanpa konfirmasi 
 | 2026-10-28 | Database dev & production: PostgreSQL via Laragon | DB_PASSWORD kosong (Laragon default) |
 | 2026-10-28 | APP_URL: `http://pklpnm-webproject.test` | Konvensi virtual host Laragon |
 | 2026-10-28 | Phase 0 selesai | Semua infrastruktur siap; lanjut Phase 1 |
+| 2026-10-30 | Phase 1-4 dipecah menjadi Phase 1-17 | Prinsip 1 phase = 1 fitur yang dapat diuji secara mandiri |
+| 2026-10-30 | Phase 1 selesai | Login/logout & RBAC berfungsi untuk semua peran; middleware `CheckPeran`, `AuthController`, `LoginRequest`, 6 dashboard stub, halaman 403 sudah dibuat |
 
 *Tambahkan entri baru di tabel ini setiap kali ada keputusan teknis penting selama development.*

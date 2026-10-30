@@ -11,7 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Alias middleware peran untuk RBAC per peran pengguna
+        $middleware->alias([
+            'peran' => \App\Http\Middleware\CheckPeran::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
