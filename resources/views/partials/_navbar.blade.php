@@ -1,4 +1,4 @@
-﻿{{-- Topbar — disalin 1:1 dari index.html MaterialPro, hanya konten profil/notifikasi yang disesuaikan --}}
+{{-- Topbar — disalin 1:1 dari index.html MaterialPro, hanya konten profil/notifikasi yang disesuaikan --}}
 <header class="topbar rounded-0 border-0 bg-primary">
     <div class="with-vertical">
         <nav class="navbar navbar-expand-lg px-lg-0 px-3 py-0">
@@ -153,6 +153,14 @@
                                                     {{ \App\Helpers\PeranHelper::label(Auth::user()->peran) }}
                                                 </span>
                                             </div>
+                                            @if(Auth::user()->peran === 'mahasiswa')
+                                            <div class="h6 mb-0 dropdown-item py-8 px-3 rounded-2 link">
+                                                <a href="{{ route('mahasiswa.profil.show') }}" class="d-flex align-items-center text-dark">
+                                                    <iconify-icon icon="solar:user-circle-linear" class="me-2 fs-5"></iconify-icon>
+                                                    Profil Saya
+                                                </a>
+                                            </div>
+                                            @endif
                                         </div>
                                         <hr>
                                         <div class="px-3">

@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'peran'               => \App\Http\Middleware\CheckPeran::class,
             'wajib-ganti-password' => \App\Http\Middleware\WajibGantiPassword::class,
+            'profil-lengkap'      => \App\Http\Middleware\ProfilLengkap::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

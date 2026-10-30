@@ -10,6 +10,17 @@
 @section('content')
 <div class="py-4">
 
+    {{-- Banner: profil belum lengkap --}}
+    @if(!Auth::user()->profilMahasiswa)
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-4" role="alert">
+        <iconify-icon icon="solar:info-circle-linear" class="fs-5"></iconify-icon>
+        <div>
+            Profil Anda belum lengkap.
+            <a href="{{ route('mahasiswa.profil.edit') }}" class="alert-link">Lengkapi sekarang</a>
+        </div>
+    </div>
+    @endif
+
     {{-- Sambutan --}}
     <div class="card mb-4 border-0 shadow-sm">
         <div class="card-body d-flex align-items-center gap-3 py-4">

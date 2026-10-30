@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Auth\AuthController;
@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\GantiPasswordController;
 use App\Http\Controllers\Dosen\DashboardController as DosenDashboard;
 use App\Http\Controllers\Kps\DashboardController as KpsDashboard;
 use App\Http\Controllers\Mahasiswa\DashboardController as MahasiswaDashboard;
+use App\Http\Controllers\Mahasiswa\ProfilController;
 use App\Http\Controllers\PicMagang\DashboardController as PicMagangDashboard;
 use App\Http\Controllers\PicPerusahaan\DashboardController as PicPerusahaanDashboard;
 use Illuminate\Support\Facades\Auth;
@@ -58,9 +59,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/ganti-password', [GantiPasswordController::class, 'update']);
 
     // Mahasiswa
-    Route::prefix('mahasiswa')->name('mahasiswa.')->middleware(['peran:mahasiswa', 'wajib-ganti-password'])->group(function () {
+    Route::prefix('mahasiswa')->name('mahasiswa.')->middleware(['peran:mahasiswa', 'wajib-ganti-password', 'profil-lengkap'])->group(function () {
         Route::get('/dashboard', [MahasiswaDashboard::class, 'index'])->name('dashboard');
-        Route::get('/profil/edit', fn () => abort(503, 'Phase 3'))->name('profil.edit');
+        Route::get('/profil', [ProfilController::class, 'show'])->name('profil.show');
+        Route::get('/profil/edit', [ProfilController::class, 'edit'])->name('profil.edit');
+        Route::put('/profil', [ProfilController::class, 'update'])->name('profil.update');
         Route::get('/pengajuan', fn () => abort(503, 'Phase 6'))->name('pengajuan.index');
         Route::get('/jurnal', fn () => abort(503, 'Phase 11'))->name('jurnal.index');
         Route::get('/bimbingan', fn () => abort(503, 'Phase 13'))->name('bimbingan.index');

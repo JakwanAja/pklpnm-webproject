@@ -1,4 +1,4 @@
-﻿{{-- Sidebar navigasi berdasarkan peran pengguna yang sedang login --}}
+{{-- Sidebar navigasi berdasarkan peran pengguna yang sedang login --}}
 <aside class="left-sidebar with-vertical">
     <div>
     <nav class="sidebar-nav scroll-sidebar" data-simplebar>
@@ -53,7 +53,7 @@
                 </a>
             </li>
             <li class="sidebar-item {{ request()->routeIs('mahasiswa.profil.*') ? 'selected' : '' }}">
-                <a class="sidebar-link" href="{{ route('mahasiswa.profil.edit') }}">
+                <a class="sidebar-link" href="{{ route('mahasiswa.profil.show') }}">
                     <iconify-icon icon="solar:user-circle-linear" class="aside-icon"></iconify-icon>
                     <span class="hide-menu">Profil Saya</span>
                 </a>

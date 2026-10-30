@@ -1,4 +1,4 @@
-﻿---
+---
 inclusion: always
 ---
 
@@ -34,6 +34,8 @@ inclusion: always
 
 > **Phase 0 selesai** — 2026-10-28
 > **Phase 1 selesai** — 2026-10-30
+> **Phase 2 selesai** — 2026-10-30
+> **Phase 3 selesai** — 2026-10-30
 
 ### Yang Sudah Ada
 - **Database migrations** — 18 tabel sudah termigrasi di PostgreSQL (`pklpnm`).
@@ -41,19 +43,22 @@ inclusion: always
 - **MaterialPro Bootstrap 5 v10** — Aset dicopy ke `public/assets/`.
 - **Dokumentasi** — SKPL v0.7 dan SRS tersedia di folder `documentation/`.
 - **Model `User`** — sudah disesuaikan (SoftDeletes, fillable, relasi, helper `memenuhinSyaratPkl()`).
+- **Model `ProfilMahasiswa`** — dibuat Phase 3 (fillable, casts, relasi belongsTo User).
 - **Layout Blade** — `layouts/app.blade.php` dan `layouts/auth.blade.php` siap pakai.
 - **Partial views** — `_sidebar.blade.php` (menu per peran), `_navbar.blade.php`, `_scripts.blade.php`.
 - **Helper** — `App\Helpers\PeranHelper` untuk label peran bahasa Indonesia.
 - **Seeders** — `PengaturanSeeder` (8 baris default) + `UserSeeder` (5 akun + 1 profil mahasiswa).
-- **Routes** — Semua route sudah diimplementasikan dengan controller nyata (Phase 1); placeholder 503 untuk fitur Phase 2+.
+- **Routes** — Semua route sudah diimplementasikan dengan controller nyata (Phase 1–3); placeholder 503 untuk fitur Phase 4+.
 - **Welcome page** — `welcome.blade.php` dengan status infrastruktur (tampil di mode debug).
 - **Autentikasi** — `Auth\AuthController` (login/logout), `LoginRequest`, `CheckPeran` middleware.
+- **Ganti password** — `WajibGantiPassword` middleware, `GantiPasswordController`, `GantiPasswordRequest`.
 - **Dashboard stub** — 6 dashboard per peran (mahasiswa, pic_magang, kps, dosen, pic_perusahaan, admin).
 - **Halaman error** — `errors/403.blade.php` untuk akses ditolak.
+- **Profil mahasiswa** — `ProfilMahasiswaRepository`, `ProfilMahasiswaService`, `Mahasiswa/ProfilController`, `ProfilMahasiswaRequest`, middleware `ProfilLengkap`, view `mahasiswa/profil/edit.blade.php`.
 
-### Yang Belum Ada (dikerjakan mulai Phase 3)
-- Models selain `User` (`Perusahaan`, `Periode`, `Pengajuan`, dst.)
-- Services dan Repositories
+### Yang Belum Ada (dikerjakan mulai Phase 4)
+- Models selain `User` dan `ProfilMahasiswa` (`Perusahaan`, `Periode`, `Pengajuan`, dst.)
+- Services dan Repositories selain `ProfilMahasiswaService` dan `ProfilMahasiswaRepository`
 - Halaman fungsional (pengajuan, jurnal, bimbingan, laporan, penilaian, dll.)
 - Policies
 
@@ -332,17 +337,19 @@ Template MaterialPro adalah pre-built HTML + compiled assets. Strategi integrasi
 ---
 
 ### Phase 3 — Profil Mahasiswa
+> **Phase 3 selesai** — 2026-10-30
+
 **Fitur yang diuji:** Mahasiswa dapat mengisi dan mengedit data profilnya lengkap.
 
 **Prasyarat:** Phase 1 selesai.
 
 **Lingkup:**
-- [ ] Model: `ProfilMahasiswa` (relasi hasOne dari User)
-- [ ] Repository: `ProfilMahasiswaRepository`
-- [ ] `Mahasiswa/ProfilController`: show (lihat profil), edit, update
-- [ ] Form Request: `ProfilMahasiswaRequest` (semua field wajib)
-- [ ] View: `mahasiswa/profil/edit.blade.php`
-- [ ] Mahasiswa belum isi profil -> redirect ke halaman profil saat akses halaman lain
+- [x] Model: `ProfilMahasiswa` (relasi hasOne dari User)
+- [x] Repository: `ProfilMahasiswaRepository`
+- [x] `Mahasiswa/ProfilController`: show (lihat profil), edit, update
+- [x] Form Request: `ProfilMahasiswaRequest` (semua field wajib)
+- [x] View: `mahasiswa/profil/edit.blade.php`
+- [x] Mahasiswa belum isi profil -> redirect ke halaman profil saat akses halaman lain
 
 **Kriteria Selesai:**
 - Mahasiswa dapat menyimpan semua field profil (nama, NPM, prodi, kelas, jenis kelamin, alamat KTP, alamat domisili, no HP)
@@ -839,5 +846,6 @@ Belum ada package tambahan lain. Jangan tambahkan package baru tanpa konfirmasi 
 | 2026-10-30 | Phase 1-4 dipecah menjadi Phase 1-17 | Prinsip 1 phase = 1 fitur yang dapat diuji secara mandiri |
 | 2026-10-30 | Phase 1 selesai | Login/logout & RBAC berfungsi untuk semua peran; middleware `CheckPeran`, `AuthController`, `LoginRequest`, 6 dashboard stub, halaman 403 sudah dibuat |
 | 2026-10-30 | Phase 2 selesai | Ganti password wajib PIC Perusahaan berfungsi; `WajibGantiPassword` middleware, `GantiPasswordController`, `GantiPasswordRequest`, view `auth/ganti-password.blade.php`, akun `picperusahaan@pklpnm.test` ditambahkan di seeder |
+| 2026-10-30 | Phase 3 selesai | Profil mahasiswa dapat diisi dan diedit; `ProfilMahasiswa` model, `ProfilMahasiswaRepository`, `ProfilMahasiswaService`, `Mahasiswa/ProfilController`, `ProfilMahasiswaRequest`, middleware `ProfilLengkap` |
 
 *Tambahkan entri baru di tabel ini setiap kali ada keputusan teknis penting selama development.*
